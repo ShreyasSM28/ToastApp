@@ -1,0 +1,45 @@
+from flask import Flask, request, jsonify
+import subprocess
+import json
+import requests
+app = Flask(__name__)
+app.config["DEBUG"] = True
+from requests.auth import HTTPBasicAuth
+import re
+import jsonschema
+from jsonschema import validate
+from flask_restful import Api, Resource
+import pymongo
+import datetime
+class TableManagement(Resource):
+
+    def post(self):
+
+        try:
+            self.user_name = request.json["user_name"]  # user name
+            self.table = request.json["table"] #Add or Delete tables drop down
+            self.user_table=request.json["user_table"] #No of tables
+
+            myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+            app_db = myclient["ToastApp"]
+            table_collection = app_db["tables"]
+            no_tables = {"tables":self.user_table,"user_name":self.user_name,"time_stamp":datetime.now()}
+            if self.table== "Add":
+                x = table_collection.insert_one(no_tables)
+                return json.dumps({"isSuccess": True, "message":"Table booked successfully"})
+            elif self.table=="Delete":
+                y=table_collection.delete_one({"user_name":self.user_name})
+                return json.dumps({"isSuccess": True, "message": "Table cancelled successfully"})
+
+        except Exception as e:
+            return json.dumps({"isSuccess": False, "message": e.response.json()})
+class Menus(Resource,TableManagement):
+    def post(self):
+        try:
+            table=TableManagement()
+            myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+            app_db = myclient["ToastApp"]
+            menu_collection=app_db["menus"]
+            
+        except Exception as e:
+            return json.dumps({"isSuccess": False, "message": e.response.json()})
